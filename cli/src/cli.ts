@@ -16,6 +16,7 @@ const VERBOSE_OPTION = '-v, --verbose';
 // Generate command options
 const PATTERN_OPTION = '-p, --pattern <file>';
 const CALMHUB_URL_OPTION = '-c, --calm-hub-url <url>';
+const CALMHUB_PLUGIN_OPTION = '--calm-hub-plugin <path>';
 
 // Validate command options
 const FORMAT_OPTION = '-f, --format <format>';
@@ -46,6 +47,7 @@ export function setupCLI(program: Command) {
         .requiredOption(OUTPUT_OPTION, 'Path location at which to output the generated file.', 'architecture.json')
         .option(SCHEMAS_OPTION, 'Path to the directory containing the meta schemas to use.')
         .option(CALMHUB_URL_OPTION, 'URL to CALMHub instance')
+        .option(CALMHUB_PLUGIN_OPTION, 'Plugin to support custom CALMHub access')
         .option(URL_MAPPING_OPTION, 'Path to mapping file which maps URLs to local paths')
         .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
         .action(async (options) => {
@@ -84,6 +86,8 @@ Validation requires:
                 .default('json')
         )
         .option(OUTPUT_OPTION, 'Path location at which to output the generated file.')
+        .option(CALMHUB_URL_OPTION, 'URL to CALMHub instance')
+        .option(CALMHUB_PLUGIN_OPTION, 'Plugin to support custom CALMHub access')
         .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
         .action(async (options) => {
             const { checkValidateOptions, runValidate } = await import('./command-helpers/validate');
@@ -100,6 +104,24 @@ Validation requires:
                 outputFormat: options.format,
                 outputPath: options.output
             });
+        });
+
+    program
+        .command('server')
+        .description('Start a HTTP server to proxy CLI commands. (experimental)')
+        .option(PORT_OPTION, 'Port to run the server on', '3000')
+        .requiredOption(SCHEMAS_OPTION, 'Path to the directory containing the meta schemas to use.')
+        .option(CALMHUB_URL_OPTION, 'URL to CALMHub instance')
+        .option(CALMHUB_PLUGIN_OPTION, 'Plugin to support custom CALMHub access')
+        .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
+        .option(CALMHUB_URL_OPTION, 'URL to CALMHub instance')
+        .action(async (options) => {
+            const { startServer } = await import('./server/cli-server');
+            const debug = !!options.verbose;
+            const docLoaderOpts = await parseDocumentLoaderConfig(options);
+            const docLoader = buildDocumentLoader(docLoaderOpts);
+            const schemaDirectory = await buildSchemaDirectory(docLoader, debug);
+            startServer(options.port, schemaDirectory, debug);
         });
 
     program
@@ -247,6 +269,7 @@ export async function parseDocumentLoaderConfig(
     const logger = initLogger(options.verbose ?? false, 'calm-cli');
     const docLoaderOpts: DocumentLoaderOptions = {
         calmHubUrl: options.calmHubUrl,
+        calmHubPlugin: options.calmHubPlugin,
         schemaDirectoryPath: options.schemaDirectory,
         urlToLocalMap: urlToLocalMap,
         basePath: basePath,
@@ -254,10 +277,33 @@ export async function parseDocumentLoaderConfig(
     };
 
     const userConfig = await loadCliConfig();
-    if (userConfig && userConfig.calmHubUrl && !options.calmHubUrl) {
-        logger.info('Using CALMHub URL from config file: ' + userConfig.calmHubUrl);
-        docLoaderOpts.calmHubUrl = userConfig.calmHubUrl;
+
+    // Priority:
+    //   HIGHEST: Command line options
+    //   MEDIUM: Environment variables
+    //   LOWEST: Config file
+    if (!docLoaderOpts.calmHubUrl) {
+        if (process.env.CALM_HUB_URL) {
+            logger.info('Using CALMHub URL from environment variable: ' + process.env.CALM_HUB_URL);
+            docLoaderOpts.calmHubUrl = process.env.CALM_HUB_URL;
+        }
+        else if (userConfig && userConfig.calmHubUrl) {
+            logger.info('Using CALMHub URL from config file: ' + userConfig.calmHubUrl);
+            docLoaderOpts.calmHubUrl = userConfig.calmHubUrl;
+        }
     }
+
+    if (!docLoaderOpts.calmHubPlugin) {
+        if (process.env.CALM_HUB_PLUGIN) {
+            logger.info('Using CALMHub Plugin from environment variable: ' + process.env.CALM_HUB_PLUGIN);
+            docLoaderOpts.calmHubPlugin = process.env.CALM_HUB_PLUGIN;
+        }
+        else if (userConfig && userConfig.calmHubPlugin) {
+            logger.info('Using CALMHub Plugin from config file: ' + userConfig.calmHubPlugin);
+            docLoaderOpts.calmHubPlugin = userConfig.calmHubPlugin;
+        }
+    }
+
     return docLoaderOpts;
 }
 
