@@ -29,6 +29,7 @@ This is the **FINOS Architecture as Code** monorepo containing the Common Archit
 architecture-as-code/
 ├── calm/                      # CALM specification (JSON schemas)
 ├── cli/                       # TypeScript CLI (@finos/calm-cli)
+├── calm-server/               # REST API server for validation (@finos/calm-server)
 ├── calm-hub/                  # Java/Quarkus REST API backend
 ├── calm-plugins/vscode/       # VSCode extension
 ├── calm-models/               # TypeScript data models
@@ -84,6 +85,7 @@ Running `npm install` on a different Node major version (e.g. Node 25) causes:
 
 For detailed guidance on specific packages, see:
 - **[cli/AGENTS.md](cli/AGENTS.md)** - CLI commands, build pipeline, Commander.js patterns
+- **[calm-server/AGENTS.md](calm-server/AGENTS.md)** - REST API server, Express.js routes, validation endpoints
 - **[calm-hub/AGENTS.md](calm-hub/AGENTS.md)** - Java/Quarkus backend, storage modes, security
 - **[calm-plugins/vscode/AGENTS.md](calm-plugins/vscode/AGENTS.md)** - VSCode extension, MVVM architecture
 - **[calm-widgets/AGENTS.md](calm-widgets/AGENTS.md)** - Widget system, Handlebars templates, common pitfalls
@@ -151,7 +153,7 @@ npm run build              # Production build
 
 ```
 TypeScript packages (npm workspaces) build in order:
-  calm-models → calm-widgets → shared → cli → calm-plugins/vscode
+  calm-models → calm-widgets → shared → cli, calm-server → calm-plugins/vscode
 
 Maven modules (reactor build):
   Parent POM → calm-hub (only Java module with code)
@@ -161,6 +163,7 @@ Maven modules (reactor build):
 **Important**: 
 - Always build dependencies before dependent packages for TypeScript
 - Maven reactor handles build order automatically: `./mvnw clean install`
+- Both `cli` and `calm-server` depend on `shared`, `calm-widgets`, and `calm-models`
 
 ## Common Workflows
 
@@ -171,6 +174,16 @@ npm run build:cli          # Builds models, widgets, shared, cli
 npm run link:cli           # Link globally
 calm --version             # Verify
 npm test --workspace cli   # Run CLI tests
+```
+
+### Working on CALM Server
+```bash
+# From repository root
+npm run build:calm-server   # Builds models, widgets, shared, calm-server
+npm run link:calm-server    # Link globally
+calm-server --port 3000     # Start server
+npm test --workspace calm-server  # Run server tests
+npm run watch --workspace calm-server  # Watch mode
 ```
 
 ### Working on VSCode Extension
