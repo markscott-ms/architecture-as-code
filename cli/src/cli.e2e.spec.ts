@@ -92,6 +92,40 @@ describe('CLI Integration Tests', () => {
         expect(stdout).toContain('Options:');
     });
 
+    test('calm auth --help shows auth commands', async () => {
+        const { stdout } = await run(calm(), ['auth', '--help']);
+        expect(stdout).toContain('Manage authentication and credentials');
+        expect(stdout).toContain('login');
+        expect(stdout).toContain('logout');
+        expect(stdout).toContain('status');
+        expect(stdout).toContain('refresh');
+    });
+
+    test('calm auth login --help shows login options', async () => {
+        const { stdout } = await run(calm(), ['auth', 'login', '--help']);
+        expect(stdout).toContain('Authenticate with configured provider');
+        expect(stdout).toContain('--verbose');
+        expect(stdout).toContain('--provider');
+    });
+
+    test('calm auth logout --help shows logout options', async () => {
+        const { stdout } = await run(calm(), ['auth', 'logout', '--help']);
+        expect(stdout).toContain('Clear stored credentials');
+        expect(stdout).toContain('--verbose');
+    });
+
+    test('calm auth status --help shows status options', async () => {
+        const { stdout } = await run(calm(), ['auth', 'status', '--help']);
+        expect(stdout).toContain('Show authentication status');
+        expect(stdout).toContain('--verbose');
+    });
+
+    test('calm auth refresh --help shows refresh options', async () => {
+        const { stdout } = await run(calm(), ['auth', 'refresh', '--help']);
+        expect(stdout).toContain('Refresh authentication token');
+        expect(stdout).toContain('--verbose');
+    });
+
     describe.each(['copilot', 'kiro', 'claude'])('calm init-ai -p %s', (provider) => {
         test('creates correct directory structure and files', async () => {
             const testDir = path.join(tempDir, `init-ai-${provider}-test`);

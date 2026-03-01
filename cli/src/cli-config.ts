@@ -1,10 +1,74 @@
 import { initLogger } from '@finos/calm-shared';
+import {
+    type AuthProvider,
+    type CredentialProvider,
+    createAuthProvider,
+    createCredentialProvider,
+} from '@finos/calm-shared';
 import { readFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 
+/**
+ * CLI Configuration for CALM
+ *
+ * Example configurations:
+ *
+ * 1. Device Flow (best for CLI/headless):
+ * {
+ *   "calmHubUrl": "https://calm-adc.enterprise.com",
+ *   "auth": {
+ *     "provider": "oauth-device-flow",
+ *     "options": {
+ *       "deviceAuthorizationEndpoint": "https://calm-adc.enterprise.com/oauth/device/code",
+ *       "tokenEndpoint": "https://calm-adc.enterprise.com/oauth/token",
+ *       "clientId": "calm-cli"
+ *     }
+ *   }
+ * }
+ *
+ * 2. Authorization Code Flow (better UX):
+ * {
+ *   "calmHubUrl": "https://calm-adc.enterprise.com",
+ *   "auth": {
+ *     "provider": "oauth-authcode-flow",
+ *     "options": {
+ *       "authorizationEndpoint": "https://calm-adc.enterprise.com/oauth/authorize",
+ *       "tokenEndpoint": "https://calm-adc.enterprise.com/oauth/token",
+ *       "clientId": "calm-cli"
+ *     }
+ *   }
+ * }
+ *
+ * 3. Bearer Token (for CI/CD):
+ * {
+ *   "calmHubUrl": "https://calm-adc.enterprise.com",
+ *   "auth": {
+ *     "provider": "bearer-token",
+ *     "options": {
+ *       "token": "${CALM_AUTH_TOKEN}"
+ *     }
+ *   }
+ * }
+ *
+ * 4. Custom provider:
+ * {
+ *   "calmHubUrl": "https://calm-adc.enterprise.com",
+ *   "auth": {
+ *     "provider": "my-custom-auth",
+ *     "options": {
+ *       "customOption": "custom-value"
+ *     }
+ *   }
+ * }
+ */
 export interface CLIConfig {
-    calmHubUrl?: string
+    calmHubUrl?: string;
+    auth?: {
+        provider: string;
+        options?: Record<string, unknown>;
+        credentialStorage?: string; // Default: 'file', can be 'memory' or custom provider name
+    };
 }
 
 function getUserConfigLocation(): string {
@@ -30,4 +94,18 @@ export async function loadCliConfig(): Promise<CLIConfig | null> {
         logger.error('Unexpected error loading user config: ' + String(err));
         return null;
     }
+}
+
+export function loadCredentialProvider(config: CLIConfig): CredentialProvider {
+    const storageName = config.auth?.credentialStorage || 'file';
+    return createCredentialProvider(storageName);
+}
+
+export function loadAuthProvider(config: CLIConfig): AuthProvider | null {
+    if (!config.auth) {
+        return null;
+    }
+
+    const credentialProvider = loadCredentialProvider(config);
+    return createAuthProvider(config.auth, credentialProvider);
 }

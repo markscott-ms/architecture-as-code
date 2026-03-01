@@ -2,7 +2,7 @@ import { CALM_META_SCHEMA_DIRECTORY, DocifyMode, initLogger, runGenerate, Schema
 import { Option, Command } from 'commander';
 import { version } from '../package.json';
 import { promptUserForOptions } from './command-helpers/generate-options';
-import { loadCliConfig } from './cli-config';
+import { loadCliConfig, loadAuthProvider } from './cli-config';
 import path from 'path';
 import { select } from '@inquirer/prompts';
 
@@ -49,16 +49,20 @@ export function setupCLI(program: Command) {
         .option(URL_MAPPING_OPTION, 'Path to mapping file which maps URLs to local paths')
         .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
         .action(async (options) => {
-            const debug = !!options.verbose;
-            const { getUrlToLocalFileMap } = await import('./command-helpers/template');
-            const urlToLocalMap = getUrlToLocalFileMap(options.urlToLocalFileMapping);
-            const patternBasePath = options.pattern ? path.dirname(path.resolve(options.pattern)) : undefined;
-            const docLoaderOpts = await parseDocumentLoaderConfig(options, urlToLocalMap, patternBasePath);
-            const docLoader = buildDocumentLoader(docLoaderOpts);
-            const schemaDirectory = await buildSchemaDirectory(docLoader, debug);
-            const pattern: object = await docLoader.loadMissingDocument(options.pattern, 'pattern');
-            const choices: CalmChoice[] = await promptUserForOptions(pattern, options.verbose);
-            await runGenerate(pattern, options.output, debug, schemaDirectory, choices);
+            try {
+                const debug = !!options.verbose;
+                const { getUrlToLocalFileMap } = await import('./command-helpers/template');
+                const urlToLocalMap = getUrlToLocalFileMap(options.urlToLocalFileMapping);
+                const patternBasePath = options.pattern ? path.dirname(path.resolve(options.pattern)) : undefined;
+                const docLoaderOpts = await parseDocumentLoaderConfig(options, urlToLocalMap, patternBasePath);
+                const docLoader = buildDocumentLoader(docLoaderOpts);
+                const schemaDirectory = await buildSchemaDirectory(docLoader, debug);
+                const pattern: object = await docLoader.loadMissingDocument(options.pattern, 'pattern');
+                const choices: CalmChoice[] = await promptUserForOptions(pattern, options.verbose);
+                await runGenerate(pattern, options.output, debug, schemaDirectory, choices);
+            } catch (error) {
+                handleAuthError(error);
+            }
         });
 
     program
@@ -86,20 +90,24 @@ Validation requires:
         .option(OUTPUT_OPTION, 'Path location at which to output the generated file.')
         .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
         .action(async (options) => {
-            const { checkValidateOptions, runValidate } = await import('./command-helpers/validate');
-            checkValidateOptions(program, options, PATTERN_OPTION, ARCHITECTURE_OPTION, TIMELINE_OPTION);
-            await runValidate({
-                architecturePath: options.architecture,
-                patternPath: options.pattern,
-                timelinePath: options.timeline,
-                metaSchemaPath: options.schemaDirectory,
-                calmHubUrl: options.calmHubUrl,
-                urlToLocalFileMapping: options.urlToLocalFileMapping,
-                verbose: !!options.verbose,
-                strict: options.strict,
-                outputFormat: options.format,
-                outputPath: options.output
-            });
+            try {
+                const { checkValidateOptions, runValidate } = await import('./command-helpers/validate');
+                checkValidateOptions(program, options, PATTERN_OPTION, ARCHITECTURE_OPTION, TIMELINE_OPTION);
+                await runValidate({
+                    architecturePath: options.architecture,
+                    patternPath: options.pattern,
+                    timelinePath: options.timeline,
+                    metaSchemaPath: options.schemaDirectory,
+                    calmHubUrl: options.calmHubUrl,
+                    urlToLocalFileMapping: options.urlToLocalFileMapping,
+                    verbose: !!options.verbose,
+                    strict: options.strict,
+                    outputFormat: options.format,
+                    outputPath: options.output
+                });
+            } catch (error) {
+                handleAuthError(error);
+            }
         });
 
     program
@@ -231,6 +239,48 @@ Validation requires:
             await setupAiTools(selectedProvider, options.directory, !!options.verbose);
         });
 
+    // Authentication commands
+    const authCommand = program
+        .command('auth')
+        .description('Manage authentication and credentials');
+
+    authCommand
+        .command('login')
+        .description('Authenticate with configured provider (Device Code Flow, OAuth, etc.)')
+        .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
+        .option('-p, --provider <name>', 'Override the default auth provider from config')
+        .action(async (options) => {
+            const { handleAuthLogin } = await import('./command-helpers/auth');
+            await handleAuthLogin(options.provider, options.verbose);
+        });
+
+    authCommand
+        .command('logout')
+        .description('Clear stored credentials')
+        .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
+        .action(async (options) => {
+            const { handleAuthLogout } = await import('./command-helpers/auth');
+            await handleAuthLogout(options.verbose);
+        });
+
+    authCommand
+        .command('status')
+        .description('Show authentication status and token information')
+        .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
+        .action(async (options) => {
+            const { handleAuthStatus } = await import('./command-helpers/auth');
+            await handleAuthStatus(options.verbose);
+        });
+
+    authCommand
+        .command('refresh')
+        .description('Refresh authentication token')
+        .option(VERBOSE_OPTION, 'Enable verbose logging.', false)
+        .action(async (options) => {
+            const { handleAuthRefresh } = await import('./command-helpers/auth');
+            await handleAuthRefresh(options.verbose);
+        });
+
 }
 
 interface ParseDocumentLoaderOptions {
@@ -258,9 +308,42 @@ export async function parseDocumentLoaderConfig(
         logger.info('Using CALMHub URL from config file: ' + userConfig.calmHubUrl);
         docLoaderOpts.calmHubUrl = userConfig.calmHubUrl;
     }
+
+    // Load authentication provider if configured
+    if (userConfig) {
+        const authProvider = loadAuthProvider(userConfig);
+        if (authProvider) {
+            logger.info('Authentication provider loaded: ' + userConfig.auth?.provider);
+            docLoaderOpts.authProvider = authProvider;
+        }
+    }
+
     return docLoaderOpts;
 }
 
 export async function buildSchemaDirectory(docLoader: DocumentLoader, debug: boolean): Promise<SchemaDirectory> {
     return new SchemaDirectory(docLoader, debug);
+}
+
+/**
+ * Helper to provide user-friendly error messages for authentication failures
+ */
+export function handleAuthError(error: unknown): never {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Check for authentication-related errors
+    if (errorMessage.includes('401') ||
+        errorMessage.includes('Unauthorized') ||
+        errorMessage.includes('Authentication required')) {
+        console.error('✗ Authentication required');
+        console.error('');
+        console.error('The server requires authentication. Please run:');
+        console.error('  calm auth login');
+        console.error('');
+        console.error('Or configure authentication in ~/.calm.json');
+        process.exit(1);
+    }
+
+    // For other errors, re-throw
+    throw error;
 }
