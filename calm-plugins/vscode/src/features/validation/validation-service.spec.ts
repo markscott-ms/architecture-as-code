@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ValidationService } from './validation-service'
 import type { Logger } from '../../core/ports/logger'
 import type { Config } from '../../core/ports/config'
-import { ValidationOutcome, ValidationOutput } from '@finos/calm-shared'
+import { ValidationOutcome, ValidationOutput, createAuthProvider } from '@finos/calm-shared'
 import { TEST_ALL_SCHEMA } from '../../test/test-utils'
 
 /**
@@ -74,6 +74,7 @@ vi.mock('@finos/calm-shared', async () => {
         validate: vi.fn(),
         loadArchitectureAndPattern: vi.fn(),
         loadTimeline: vi.fn(),
+        createAuthProvider: vi.fn(),
         SchemaDirectory: vi.fn().mockImplementation(() => ({
             loadSchemas: vi.fn()
         })),
@@ -362,6 +363,94 @@ describe('ValidationService', () => {
             expect(mockDetectCalmTimeline).toHaveBeenCalledWith(architectureContent)
             // Should NOT log the timeline validation message for architecture files
             expect(mockLogger.info).not.toHaveBeenCalledWith(expect.stringContaining('Validating timeline file'))
+        })
+    })
+
+    describe('buildDocumentLoader with authentication', () => {
+        it('should create document loader with auth provider when configured', async () => {
+            const mockCredentialProvider = {
+                store: vi.fn(),
+                retrieve: vi.fn(),
+                delete: vi.fn(),
+                clear: vi.fn()
+            }
+
+            const mockAuthProvider = {
+                authenticate: vi.fn(),
+                logout: vi.fn(),
+                getStoredToken: vi.fn()
+            }
+
+            // Set up createAuthProvider mock to return our mock auth provider
+            vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
+
+            mockConfig.authProvider = vi.fn(() => 'oauth-device-flow')
+            mockConfig.authOptions = vi.fn(() => ({ clientId: 'test-client' }))
+
+            const serviceWithAuth = new ValidationService(mockLogger, mockConfig, mockCredentialProvider)
+
+            // Access private method via type assertion
+            const loader = await (serviceWithAuth as any).buildDocumentLoader()
+
+            expect(loader).toBeDefined()
+            expect(createAuthProvider).toHaveBeenCalledWith(
+                {
+                    provider: 'oauth-device-flow',
+                    options: { clientId: 'test-client' }
+                },
+                mockCredentialProvider
+            )
+            expect(mockLogger.info).toHaveBeenCalledWith(
+                expect.stringContaining('Authentication provider loaded: oauth-device-flow')
+            )
+        })
+
+        it('should handle auth provider creation errors gracefully', async () => {
+            const mockCredentialProvider = {
+                store: vi.fn(),
+                retrieve: vi.fn(),
+                delete: vi.fn(),
+                clear: vi.fn()
+            }
+
+            mockConfig.authProvider = vi.fn(() => 'invalid-provider')
+            mockConfig.authOptions = vi.fn(() => ({}))
+
+            const serviceWithAuth = new ValidationService(mockLogger, mockConfig, mockCredentialProvider)
+
+            // Mock createAuthProvider to throw error for this specific call
+            vi.mocked(createAuthProvider).mockImplementationOnce(() => {
+                throw new Error('Invalid provider')
+            })
+
+            // Should not throw, but log warning
+            const loader = await (serviceWithAuth as any).buildDocumentLoader()
+
+            expect(loader).toBeDefined()
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to load authentication provider')
+            )
+        })
+
+        it('should skip auth provider when not configured', async () => {
+            mockConfig.authProvider = vi.fn(() => undefined)
+
+            const loader = await (service as any).buildDocumentLoader()
+
+            expect(loader).toBeDefined()
+            // createAuthProvider should not be called
+            expect(createAuthProvider).not.toHaveBeenCalled()
+        })
+
+        it('should skip auth provider when credential provider not available', async () => {
+            mockConfig.authProvider = vi.fn(() => 'oauth-device-flow')
+            // service was created without credential provider
+
+            const loader = await (service as any).buildDocumentLoader()
+
+            expect(loader).toBeDefined()
+            // createAuthProvider should not be called without credential provider
+            expect(createAuthProvider).not.toHaveBeenCalled()
         })
     })
 })

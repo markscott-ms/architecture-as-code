@@ -135,6 +135,23 @@ describe('Auth Commands', () => {
                 expect.stringContaining('Logged out successfully')
             )
         })
+
+        it('should handle logout errors', async () => {
+            const mockAuthProvider = {
+                logout: vi.fn().mockRejectedValue(new Error('Logout failed'))
+            }
+
+            vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
+
+            await authLogoutCommand(mockConfig, mockLogger, () => mockCredentialProvider)
+
+            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+                expect.stringContaining('Logout failed')
+            )
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Logout failed')
+            )
+        })
     })
 
     describe('authStatusCommand', () => {
@@ -193,6 +210,56 @@ describe('Auth Commands', () => {
                 expect.stringMatching(/expires in \d+ hours/)
             )
         })
+
+        it('should detect expired JWT token', async () => {
+            const pastTime = Math.floor(Date.now() / 1000) - 7200 // 2 hours ago
+            const payload = Buffer.from(JSON.stringify({ exp: pastTime })).toString('base64')
+            const jwtToken = `header.${payload}.signature`
+
+            const mockAuthProvider = {
+                getStoredToken: vi.fn().mockResolvedValue(jwtToken)
+            }
+
+            vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
+
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
+
+            expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+                expect.stringContaining('(expired)')
+            )
+        })
+
+        it('should handle non-JWT tokens gracefully', async () => {
+            const mockAuthProvider = {
+                getStoredToken: vi.fn().mockResolvedValue('not-a-jwt-token')
+            }
+
+            vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
+
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
+
+            // Should still show authenticated without expiry info
+            expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+                expect.stringContaining('Authenticated')
+            )
+        })
+
+        it('should handle status check errors', async () => {
+            const mockAuthProvider = {
+                getStoredToken: vi.fn().mockRejectedValue(new Error('Status check failed'))
+            }
+
+            vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
+
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
+
+            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+                expect.stringContaining('Status check failed')
+            )
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Status check failed')
+            )
+        })
     })
 
     describe('authRefreshCommand', () => {
@@ -232,6 +299,23 @@ describe('Auth Commands', () => {
 
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 expect.stringContaining('still valid')
+            )
+        })
+
+        it('should handle token refresh errors', async () => {
+            const mockAuthProvider = {
+                refresh: vi.fn().mockRejectedValue(new Error('Refresh failed'))
+            }
+
+            vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
+
+            await authRefreshCommand(mockConfig, mockLogger, () => mockCredentialProvider)
+
+            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+                expect.stringContaining('Refresh failed')
+            )
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Refresh failed')
             )
         })
     })
