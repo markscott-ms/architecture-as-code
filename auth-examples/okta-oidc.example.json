@@ -1,0 +1,15 @@
+{
+    "calmHubUrl": "https://calm-hub.corp.example.com",
+    "auth": {
+        "provider": "oauth-device-flow",
+        "options": {
+            "deviceAuthorizationEndpoint": "https://corp.okta.com/oauth2/v1/device_authorization",
+            "tokenEndpoint": "https://corp.okta.com/oauth2/v1/token",
+            "clientId": "0oa1c5t7k9m2n3p4",
+            "scope": "openid profile email offline_access",
+            "pollInterval": 5000,
+            "maxWaitTime": 600000
+        },
+        "credentialStorage": "file"
+    }
+}

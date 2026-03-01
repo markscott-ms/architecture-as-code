@@ -25,6 +25,59 @@ your project.
 
 Ready to get started? Check out the [CALM tutorials](https://calm.finos.org/tutorials/).
 
+## Authentication
+
+The CALM CLI and VSCode Extension support OAuth 2.0 authentication with CALM Hub, enabling secure communication in both local development and enterprise environments.
+
+**Features:**
+- OAuth 2.0 Device Code Flow (RFC 8628) - Recommended for CLI
+- OAuth 2.0 Authorization Code Flow with PKCE (RFC 7636) - Recommended for VSCode
+- Bearer Token support for CI/CD and service accounts
+- File-based credential storage (0600 mode) and enterprise vault integration
+- Support for OIDC providers (Okta, Azure AD, Keycloak) and SAML2 via ADC bridge
+
+**Quick Links:**
+- **[AUTHENTICATION.md](./AUTHENTICATION.md)** - Complete authentication guide
+- **[auth-examples/](./auth-examples/)** - Configuration examples for different scenarios
+  - [OKTA OIDC](./auth-examples/okta-oidc.example.json)
+  - [Azure AD](./auth-examples/azure-ad.example.json)
+  - [Keycloak](./auth-examples/keycloak.example.json)
+  - [Kerberos/SPNEGO](./auth-examples/kerberos-adc.example.json)
+  - [CI/CD Service Accounts](./auth-examples/cicd-service-account.example.json)
+- **[auth-examples/LOCAL-SETUP.md](./auth-examples/LOCAL-SETUP.md)** - Local development setup with Docker Compose
+
+**Example: CLI Authentication**
+
+```bash
+# Configure in ~/.calm.json
+{
+  "calmHubUrl": "https://calm-hub.example.com",
+  "auth": {
+    "provider": "oauth-device-flow",
+    "options": {
+      "deviceAuthorizationEndpoint": "https://auth.example.com/oauth/device/code",
+      "tokenEndpoint": "https://auth.example.com/oauth/token",
+      "clientId": "calm-cli"
+    }
+  }
+}
+
+# Authenticate
+calm auth login
+
+# Use authenticated commands
+calm validate -a architecture.json -p pattern.json
+```
+
+**Example: CI/CD with Service Account**
+
+```bash
+export CALM_SERVICE_TOKEN="eyJhbGc..."
+calm validate -a architecture.json -p pattern.json
+```
+
+See [AUTHENTICATION.md](./AUTHENTICATION.md) and [auth-examples/](./auth-examples/) for complete documentation including enterprise OIDC, Kerberos, and CI/CD integration patterns.
+
 ## Projects
 
 | Project                                                                                        | Maintainers                                                                                                                                                                                                                     | Builds                                                                                                                                                                                                                                                                                                                                                                                      |

@@ -1,0 +1,15 @@
+{
+    "calmHubUrl": "https://calm-hub.corp.example.com",
+    "auth": {
+        "provider": "oauth-authcode-flow",
+        "options": {
+            "authorizationEndpoint": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            "tokenEndpoint": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            "clientId": "550e8400-e29b-41d4-a716-446655440000",
+            "redirectUri": "http://localhost:7622",
+            "scope": "https://api.calm.finos.org/.default offline_access",
+            "openBrowser": true
+        },
+        "credentialStorage": "file"
+    }
+}

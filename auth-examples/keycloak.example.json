@@ -1,0 +1,16 @@
+{
+    "calmHubUrl": "https://calm-hub.corp.example.com",
+    "auth": {
+        "provider": "oauth-device-flow",
+        "options": {
+            "deviceAuthorizationEndpoint": "https://keycloak.corp.example.com/auth/realms/calm/protocol/openid-connect/auth/device",
+            "tokenEndpoint": "https://keycloak.corp.example.com/auth/realms/calm/protocol/openid-connect/token",
+            "clientId": "calm-cli",
+            "clientSecret": "${KEYCLOAK_CLIENT_SECRET}",
+            "scope": "openid profile email",
+            "pollInterval": 5000,
+            "maxWaitTime": 600000
+        },
+        "credentialStorage": "file"
+    }
+}

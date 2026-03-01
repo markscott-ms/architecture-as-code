@@ -1,0 +1,78 @@
+name: CALM Validate - Bearer Token
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CALM_HUB_URL: https://calm-hub.corp.example.com
+  NODE_VERSION: '22'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install CALM CLI
+        run: npm install -g @finos/calm-cli
+
+      - name: Create CALM config
+        run: |
+          mkdir -p ~/.calm
+          cat > ~/.calm.json << 'EOF'
+          {
+            "calmHubUrl": "${{ env.CALM_HUB_URL }}",
+            "auth": {
+              "provider": "bearer-token",
+              "options": {
+                "token": "${{ secrets.CALM_SERVICE_TOKEN }}"
+              },
+              "credentialStorage": "memory"
+            }
+          }
+          EOF
+        env:
+          CALM_SERVICE_TOKEN: ${{ secrets.CALM_SERVICE_TOKEN }}
+
+      - name: Validate architecture
+        run: calm validate -a architecture.json -p pattern.json --verbose
+
+      - name: Generate documentation
+        run: calm generate -a architecture.json -o ./build/docs --format markdown
+
+      - name: Upload documentation
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: calm-docs
+          path: ./build/docs
+          retention-days: 30
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint

@@ -36,8 +36,72 @@ Commands:
   template [options]          Generate files from a CALM model using a Handlebars template bundle.
   docify [options]            Generate a documentation website off your CALM model.
   init-ai [options]           Augment a git repository with AI assistance for CALM
+  auth [options] [command]    Manage authentication with CALM Hub
   help [command]              display help for command
 ```
+
+### Authentication
+
+The CLI supports OAuth 2.0 authentication with CALM Hub, including Device Code Flow and Authorization Code Flow with PKCE. This is useful when validating or generating architectures from a remote CALM Hub instance.
+
+#### Quick Start
+
+1. **Configure authentication** in `~/.calm.json`:
+
+```json
+{
+  "calmHubUrl": "https://calm-hub.example.com",
+  "auth": {
+    "provider": "oauth-device-flow",
+    "options": {
+      "deviceAuthorizationEndpoint": "https://auth.example.com/oauth/device/code",
+      "tokenEndpoint": "https://auth.example.com/oauth/token",
+      "clientId": "calm-cli"
+    }
+  }
+}
+```
+
+2. **Authenticate**:
+
+```bash
+calm auth login
+```
+
+3. **Use authenticated commands**:
+
+```bash
+calm validate -a architecture.json -p pattern.json
+calm generate -p pattern.json -o architecture.json
+```
+
+#### Auth Commands
+
+```bash
+# Authenticate (opens browser or shows device code)
+calm auth login
+
+# Check authentication status
+calm auth status
+
+# Refresh token
+calm auth refresh
+
+# Logout
+calm auth logout
+
+# Get command help
+calm auth --help
+```
+
+#### Enterprise Configuration
+
+The CLI supports enterprise OIDC providers (Okta, Azure AD, Keycloak) and service accounts for CI/CD. See [auth-examples/](../auth-examples/) for complete configuration examples.
+
+**More Information:**
+- [AUTHENTICATION.md](../AUTHENTICATION.md) - Complete authentication documentation
+- [auth-examples/README.md](../auth-examples/README.md) - Configuration examples
+- [auth-examples/LOCAL-SETUP.md](../auth-examples/LOCAL-SETUP.md) - Local development setup
 
 ### Generating an architecture from a CALM pattern file
 

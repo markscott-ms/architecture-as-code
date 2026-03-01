@@ -1,0 +1,14 @@
+{
+    "//": "Example VSCode settings for CALM Authentication",
+    "calm.calmHubUrl": "https://calm-hub.corp.example.com",
+    "calm.auth.provider": "oauth-authcode-flow",
+    "calm.auth.options": {
+        "authorizationEndpoint": "https://corp.okta.com/oauth2/v1/authorize",
+        "tokenEndpoint": "https://corp.okta.com/oauth2/v1/token",
+        "clientId": "calm-vscode-app-id",
+        "redirectUri": "http://localhost:7622",
+        "scope": "openid profile email offline_access",
+        "openBrowser": true
+    },
+    "calm.auth.credentialStorage": "file"
+}

@@ -1,0 +1,123 @@
+{
+    "realm": "calm",
+    "enabled": true,
+    "users": [
+        {
+            "username": "test-user",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "test123"
+                }
+            ],
+            "emailVerified": true,
+            "email": "test@example.com",
+            "firstName": "Test",
+            "lastName": "User"
+        },
+        {
+            "username": "architect",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "password123"
+                }
+            ],
+            "emailVerified": true,
+            "email": "architect@example.com",
+            "firstName": "Architecture",
+            "lastName": "Team"
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "calm-cli",
+            "enabled": true,
+            "clientAuthenticator": "client-secret",
+            "secret": "${KEYCLOAK_CLIENT_SECRET:-secret123}",
+            "redirectUris": [
+                "http://localhost:7622",
+                "http://127.0.0.1:7622"
+            ],
+            "webOrigins": [
+                "http://localhost:*",
+                "http://127.0.0.1:*"
+            ],
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "email",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "email"
+                    }
+                }
+            ]
+        },
+        {
+            "clientId": "calm-vscode",
+            "enabled": true,
+            "clientAuthenticator": "client-secret",
+            "secret": "${KEYCLOAK_VSCODE_SECRET:-secret456}",
+            "redirectUris": [
+                "http://localhost:7622",
+                "http://127.0.0.1:7622"
+            ],
+            "webOrigins": [
+                "http://localhost:*",
+                "http://127.0.0.1:*"
+            ],
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "email",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "email"
+                    }
+                }
+            ]
+        },
+        {
+            "clientId": "calm-hub",
+            "enabled": true,
+            "clientAuthenticator": "client-secret",
+            "secret": "${KEYCLOAK_HUB_SECRET:-secret789}",
+            "serviceAccountsEnabled": true,
+            "redirectUris": [
+                "http://localhost:3000/*",
+                "http://calm-hub:3000/*"
+            ],
+            "webOrigins": [
+                "http://localhost:*",
+                "http://calm-hub:*"
+            ]
+        }
+    ],
+    "clientScopes": [
+        {
+            "name": "openid",
+            "protocol": "openid-connect"
+        },
+        {
+            "name": "profile",
+            "protocol": "openid-connect"
+        },
+        {
+            "name": "email",
+            "protocol": "openid-connect"
+        }
+    ]
+}

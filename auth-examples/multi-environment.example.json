@@ -1,0 +1,16 @@
+{
+    "calmHubUrl": "${CALM_HUB_URL}",
+    "auth": {
+        "provider": "${CALM_AUTH_PROVIDER}",
+        "options": {
+            "deviceAuthorizationEndpoint": "${CALM_DEVICE_AUTH_ENDPOINT}",
+            "tokenEndpoint": "${CALM_TOKEN_ENDPOINT}",
+            "clientId": "${CALM_CLIENT_ID}",
+            "clientSecret": "${CALM_CLIENT_SECRET}",
+            "scope": "openid profile email offline_access",
+            "pollInterval": 5000,
+            "maxWaitTime": 600000
+        },
+        "credentialStorage": "${CALM_CREDENTIAL_STORAGE}"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "calmHubUrl": "https://calm-adc.corp.example.com",
+    "auth": {
+        "provider": "oauth-authcode-flow",
+        "options": {
+            "authorizationEndpoint": "https://calm-adc.corp.example.com/oauth/authorize",
+            "tokenEndpoint": "https://calm-adc.corp.example.com/oauth/token",
+            "clientId": "calm-client",
+            "redirectUri": "http://localhost:7622",
+            "scope": "openid profile email",
+            "openBrowser": true
+        },
+        "credentialStorage": "file"
+    }
+}

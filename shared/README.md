@@ -2,6 +2,75 @@
 
 This module provides shared logic such as validation and visualization utilities, intended for use across various plugins and tools in the codebase. It simplifies code reuse and promotes a unified logic layer, making it easier to maintain and extend.
 
+## Authentication
+
+The shared module provides extensible authentication support for integrating with CALM Hub and other services. It includes:
+
+- **OAuth 2.0 Device Code Flow** (RFC 8628) - Best for CLI and headless environments
+- **OAuth 2.0 Authorization Code Flow with PKCE** (RFC 7636) - Best for desktop and web applications
+- **Bearer Token** - For API keys, CI/CD, and service accounts
+- **Credential Storage** - File-based (0600 mode), in-memory, and enterprise vault support
+
+### Quick Links
+
+- **[AUTHENTICATION.md](/AUTHENTICATION.md)** - Complete authentication documentation
+- **[auth-examples/README.md](/auth-examples/README.md)** - Configuration examples for different scenarios
+- **[auth-examples/LOCAL-SETUP.md](/auth-examples/LOCAL-SETUP.md)** - Local development with OAuth
+
+### Example: CLI Authentication
+
+```bash
+# Create config with OAuth Device Flow
+cat > ~/.calm.json << 'EOF'
+{
+  "calmHubUrl": "https://calm-hub.example.com",
+  "auth": {
+    "provider": "oauth-device-flow",
+    "options": {
+      "deviceAuthorizationEndpoint": "https://auth.example.com/oauth/device/code",
+      "tokenEndpoint": "https://auth.example.com/oauth/token",
+      "clientId": "calm-cli"
+    }
+  }
+}
+EOF
+
+# Authenticate
+calm auth login
+
+# Use authenticated commands
+calm validate -a architecture.json -p pattern.json
+```
+
+### Example: VSCode Extension
+
+In `.vscode/settings.json`:
+
+```json
+{
+  "calm.calmHubUrl": "https://calm-hub.example.com",
+  "calm.auth.provider": "oauth-authcode-flow",
+  "calm.auth.options": {
+    "authorizationEndpoint": "https://auth.example.com/oauth/authorize",
+    "tokenEndpoint": "https://auth.example.com/oauth/token",
+    "clientId": "calm-vscode"
+  }
+}
+```
+
+Then use Command Palette: `CALM: Authenticate`
+
+### Enterprise Integration
+
+The authentication system supports enterprise scenarios:
+
+- **OIDC Providers** - Okta, Azure AD, Keycloak
+- **Kerberos/SPNEGO** - Via CALM ADC bridge
+- **SAML2** - Via CALM ADC bridge
+- **CI/CD** - GitHub Actions, GitLab CI, Jenkins, Azure Pipelines
+
+See [auth-examples/](./auth-examples/) for complete enterprise configuration examples.
+
 
 
 # Spectral validation rules for CALM implementations
