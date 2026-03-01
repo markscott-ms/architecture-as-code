@@ -127,7 +127,11 @@ describe('ValidationService', () => {
             showLabels: vi.fn(() => true),
             urlMapping: vi.fn(() => undefined),
             schemaAdditionalFolders: vi.fn(() => []),
-            docifyTheme: vi.fn(() => 'auto')
+            docifyTheme: vi.fn(() => 'auto'),
+            authProvider: vi.fn(() => undefined),
+            authOptions: vi.fn(() => undefined),
+            authCredentialStorage: vi.fn(() => 'file'),
+            calmHubUrl: vi.fn(() => undefined)
         }
 
         service = new ValidationService(mockLogger, mockConfig)

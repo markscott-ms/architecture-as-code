@@ -57,4 +57,20 @@ export class ConfigService implements Config {
     schemaAdditionalFolders(): string[] {
         return this.config.get<string[]>('schemas.additionalFolders', [])
     }
+
+    authProvider(): string | undefined {
+        return this.config.get<string>('auth.provider')
+    }
+
+    authOptions(): Record<string, unknown> | undefined {
+        return this.config.get<Record<string, unknown>>('auth.options')
+    }
+
+    authCredentialStorage(): string | undefined {
+        return this.config.get<string>('auth.credentialStorage', 'file')
+    }
+
+    calmHubUrl(): string | undefined {
+        return this.config.get<string>('calmHubUrl')
+    }
 }

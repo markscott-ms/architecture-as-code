@@ -10,4 +10,8 @@ export interface Config {
     urlMapping(): string | undefined
     docifyTheme(): string
     schemaAdditionalFolders(): string[]
+    authProvider(): string | undefined
+    authOptions(): Record<string, unknown> | undefined
+    authCredentialStorage(): string | undefined
+    calmHubUrl(): string | undefined
 }

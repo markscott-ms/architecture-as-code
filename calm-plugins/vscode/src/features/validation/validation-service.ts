@@ -9,7 +9,9 @@ import {
     enrichWithDocumentPositions,
     parseDocumentWithPositions,
     buildDocumentLoader,
-    DocumentLoader
+    DocumentLoader,
+    createAuthProvider,
+    createCredentialProvider
 } from '@finos/calm-shared'
 import type { Logger } from '../../core/ports/logger'
 import type { Config } from '../../core/ports/config'
@@ -294,8 +296,33 @@ export class ValidationService implements vscode.Disposable {
             }
         }
 
+        // Load authentication provider if configured
+        let authProvider
+        const authProviderName = this.config.authProvider()
+        if (authProviderName) {
+            try {
+                const authOptions = this.config.authOptions() || {}
+                const credentialStorageName = this.config.authCredentialStorage() || 'file'
+
+                const credentialProvider = createCredentialProvider(credentialStorageName)
+                authProvider = createAuthProvider(
+                    {
+                        provider: authProviderName,
+                        options: authOptions
+                    },
+                    credentialProvider
+                )
+
+                this.logger.info?.(`Authentication provider loaded: ${authProviderName}`)
+            } catch (error) {
+                this.logger.warn?.(`Failed to load authentication provider: ${error}`)
+            }
+        }
+
         return buildDocumentLoader({
-            urlToLocalMap
+            urlToLocalMap,
+            authProvider,
+            calmHubUrl: this.config.calmHubUrl()
         })
     }
 
@@ -360,17 +387,17 @@ export class ValidationService implements vscode.Disposable {
      */
     private mapSeverity(severity: string): vscode.DiagnosticSeverity {
         switch (severity.toLowerCase()) {
-            case 'error':
-                return vscode.DiagnosticSeverity.Error
-            case 'warning':
-                return vscode.DiagnosticSeverity.Warning
-            case 'information':
-            case 'info':
-                return vscode.DiagnosticSeverity.Information
-            case 'hint':
-                return vscode.DiagnosticSeverity.Hint
-            default:
-                return vscode.DiagnosticSeverity.Error
+        case 'error':
+            return vscode.DiagnosticSeverity.Error
+        case 'warning':
+            return vscode.DiagnosticSeverity.Warning
+        case 'information':
+        case 'info':
+            return vscode.DiagnosticSeverity.Information
+        case 'hint':
+            return vscode.DiagnosticSeverity.Hint
+        default:
+            return vscode.DiagnosticSeverity.Error
         }
     }
 

@@ -48,6 +48,22 @@
             {
                 "command": "calm.createWebsite",
                 "title": "CALM: Create Documentation Website"
+            },
+            {
+                "command": "calm.auth.login",
+                "title": "CALM: Authenticate"
+            },
+            {
+                "command": "calm.auth.logout",
+                "title": "CALM: Logout"
+            },
+            {
+                "command": "calm.auth.status",
+                "title": "CALM: Authentication Status"
+            },
+            {
+                "command": "calm.auth.refresh",
+                "title": "CALM: Refresh Authentication"
             }
         ],
         "viewsContainers": {
@@ -134,6 +150,34 @@
                     },
                     "default": [],
                     "markdownDescription": "Additional folders containing CALM schemas for validation. Useful for schema developers testing local schema changes. Paths are relative to the workspace root."
+                },
+                "calm.calmHubUrl": {
+                    "type": "string",
+                    "description": "URL to the CALM Hub instance for loading remote architectures and patterns.",
+                    "default": ""
+                },
+                "calm.auth.provider": {
+                    "type": "string",
+                    "enum": [
+                        "oauth-device-flow",
+                        "oauth-authcode-flow",
+                        "bearer-token"
+                    ],
+                    "markdownDescription": "Authentication provider to use for CALM Hub access. Choose **oauth-device-flow** for CLI-style authentication, **oauth-authcode-flow** for browser-based authentication, or **bearer-token** for API keys."
+                },
+                "calm.auth.options": {
+                    "type": "object",
+                    "description": "Provider-specific authentication options (e.g., endpoints, clientId, scope).",
+                    "default": {}
+                },
+                "calm.auth.credentialStorage": {
+                    "type": "string",
+                    "enum": [
+                        "file",
+                        "memory"
+                    ],
+                    "default": "file",
+                    "description": "Storage mechanism for authentication credentials."
                 }
             }
         },
