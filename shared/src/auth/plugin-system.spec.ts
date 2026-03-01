@@ -378,11 +378,11 @@ describe('Plugin System - Plugin Loading from Config File', () => {
         fs.writeFileSync(PLUGINS_CONFIG_FILE, '{ invalid json }');
 
         const { initializeAuthSystem } = await import('./plugin-system');
-        
+
         // Should log warning but not throw
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
         await initializeAuthSystem();
-        
+
         // Should have logged warning about failed config load
         expect(consoleSpy).toHaveBeenCalled();
         consoleSpy.mockRestore();
@@ -419,11 +419,11 @@ describe('Plugin System - Plugin Loading from Environment', () => {
         process.env.CALM_PLUGINS = 'plugin-a,plugin-b,plugin-c';
 
         const { initializeAuthSystem } = await import('./plugin-system');
-        
+
         // Plugins won't exist but should attempt to load them
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
         await initializeAuthSystem();
-        
+
         // Should have attempted to load each plugin
         // (they'll fail since they don't exist, which is expected)
         consoleSpy.mockRestore();
@@ -440,7 +440,7 @@ describe('Plugin System - Plugin Loading from Environment', () => {
         process.env.CALM_PLUGINS = '  plugin-a  ,  plugin-b  ';
 
         const { initializeAuthSystem } = await import('./plugin-system');
-        
+
         // Should handle whitespace correctly
         await expect(initializeAuthSystem()).resolves.not.toThrow();
     });
@@ -470,7 +470,7 @@ describe('Plugin System - Auto-Discovery', () => {
         // Create a test package with calm plugin marker
         const pluginDir = path.join(testNodeModules, 'test-calm-plugin');
         fs.mkdirSync(pluginDir, { recursive: true });
-        
+
         const packageJson = {
             name: 'test-calm-plugin',
             version: '1.0.0',
@@ -491,7 +491,7 @@ describe('Plugin System - Auto-Discovery', () => {
         // Create a scoped package
         const scopedDir = path.join(testNodeModules, '@myorg', 'calm-plugin');
         fs.mkdirSync(scopedDir, { recursive: true });
-        
+
         const packageJson = {
             name: '@myorg/calm-plugin',
             version: '1.0.0',
@@ -508,7 +508,7 @@ describe('Plugin System - Auto-Discovery', () => {
     it('should skip packages without calmPlugin marker', () => {
         const pluginDir = path.join(testNodeModules, 'regular-package');
         fs.mkdirSync(pluginDir, { recursive: true });
-        
+
         const packageJson = {
             name: 'regular-package',
             version: '1.0.0'
@@ -542,11 +542,11 @@ describe('Plugin System - Plugin Loading Errors', () => {
         process.env.CALM_PLUGINS = 'nonexistent-plugin-xyz';
 
         const { initializeAuthSystem } = await import('./plugin-system');
-        
+
         // Should log error but not throw
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
         await initializeAuthSystem();
-        
+
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining('Failed to load plugin "nonexistent-plugin-xyz"')
         );
@@ -560,15 +560,15 @@ describe('Plugin System - Plugin Loading Errors', () => {
         process.env.CALM_PLUGINS = 'bad-plugin-1,bad-plugin-2';
 
         const { initializeAuthSystem } = await import('./plugin-system');
-        
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
         await initializeAuthSystem();
-        
+
         // Should have attempted both and logged errors for both
         const calls = consoleSpy.mock.calls.map(call => call[0]);
         expect(calls.some(msg => msg.includes('bad-plugin-1'))).toBe(true);
         expect(calls.some(msg => msg.includes('bad-plugin-2'))).toBe(true);
-        
+
         consoleSpy.mockRestore();
         delete process.env.CALM_PLUGINS;
     });
