@@ -9,6 +9,13 @@ import { Command } from 'commander';
 import { MockInstance } from 'vitest';
 import { parseDocumentLoaderConfig } from './cli';
 
+// Mock cli-config module
+vi.mock('./cli-config', () => ({
+    loadCliConfig: vi.fn(),
+    loadAuthProvider: vi.fn(),
+    loadCredentialProvider: vi.fn(),
+}));
+
 let calmShared: typeof import('@finos/calm-shared');
 let validateModule: typeof import('./command-helpers/validate');
 let templateModule: typeof import('./command-helpers/template');
@@ -372,6 +379,10 @@ describe('CLI Commands', () => {
 });
 
 describe('parseDocumentLoaderConfig', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('should parse calmhub url when provided', async () => {
         const options = await parseDocumentLoaderConfig({
             calmHubUrl: 'calmhub'
@@ -407,5 +418,45 @@ describe('parseDocumentLoaderConfig', () => {
         const options = await parseDocumentLoaderConfig({
         });
         expect(options.debug).toBeFalsy();
+    });
+
+    it('should use calmHubUrl from config file when not provided via CLI', async () => {
+        cliConfigModule = await import('./cli-config');
+        vi.spyOn(cliConfigModule, 'loadCliConfig').mockResolvedValue({ calmHubUrl: 'https://hub.example.com' });
+
+        const options = await parseDocumentLoaderConfig({});
+
+        expect(options.calmHubUrl).toEqual('https://hub.example.com');
+    });
+
+    it('should load auth provider from config', async () => {
+        const mockAuthProvider = { getToken: vi.fn() };
+        cliConfigModule = await import('./cli-config');
+        vi.spyOn(cliConfigModule, 'loadCliConfig').mockResolvedValue({
+            auth: {
+                provider: 'oauth-device-flow',
+                options: {}
+            }
+        });
+        vi.spyOn(cliConfigModule, 'loadAuthProvider').mockReturnValue(mockAuthProvider as any);
+
+        const options = await parseDocumentLoaderConfig({});
+
+        expect(options.authProvider).toBe(mockAuthProvider);
+    });
+
+    it('should not set auth provider if loadAuthProvider returns null', async () => {
+        cliConfigModule = await import('./cli-config');
+        vi.spyOn(cliConfigModule, 'loadCliConfig').mockResolvedValue({
+            auth: {
+                provider: 'bearer-token',
+                options: {}
+            }
+        });
+        vi.spyOn(cliConfigModule, 'loadAuthProvider').mockReturnValue(null);
+
+        const options = await parseDocumentLoaderConfig({});
+
+        expect(options.authProvider).toBeUndefined();
     });
 });

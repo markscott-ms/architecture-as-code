@@ -263,6 +263,29 @@ describe('CLI Auth Commands', () => {
             expect(consoleLogSpy).toHaveBeenCalledWith('No authentication configured');
             expect(processExitSpy).not.toHaveBeenCalled();
         });
+
+        it('should handle errors during status check', async () => {
+            const mockAuthProvider = {
+                getStoredToken: vi.fn().mockRejectedValue(new Error('Failed to retrieve token')),
+            };
+
+            const mockConfig = {
+                auth: {
+                    provider: 'oauth-device-flow',
+                    options: {},
+                },
+            };
+
+            vi.mocked(loadCliConfig).mockResolvedValue(mockConfig as any);
+            vi.mocked(loadAuthProvider).mockReturnValue(mockAuthProvider as any);
+
+            await handleAuthStatus(false);
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to retrieve token')
+            );
+            expect(processExitSpy).toHaveBeenCalledWith(1);
+        });
     });
 
     describe('handleAuthRefresh', () => {
@@ -337,6 +360,25 @@ describe('CLI Auth Commands', () => {
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 expect.stringContaining('No authentication configured')
+            );
+            expect(processExitSpy).toHaveBeenCalledWith(1);
+        });
+
+        it('should error if auth provider cannot be loaded', async () => {
+            const mockConfig = {
+                auth: {
+                    provider: 'oauth-device-flow',
+                    options: {},
+                },
+            };
+
+            vi.mocked(loadCliConfig).mockResolvedValue(mockConfig as any);
+            vi.mocked(loadAuthProvider).mockReturnValue(null);
+
+            await handleAuthRefresh(false);
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('No auth provider configured')
             );
             expect(processExitSpy).toHaveBeenCalledWith(1);
         });
