@@ -11,7 +11,6 @@
  */
 
 export { NoAuthProvider } from './no-auth-provider';
-// Placeholder exports for providers that will be implemented in next steps
-// export { BearerTokenProvider } from './bearer-token-provider';
-// export { OAuthDeviceFlowProvider } from './oauth-device-flow-provider';
-// export { OAuthAuthCodeFlowProvider } from './oauth-authcode-flow-provider';
+export { BearerTokenProvider, RetrievableBearerTokenProvider } from './bearer-token-provider';
+export { OAuthDeviceFlowProvider } from './oauth-device-flow-provider';
+export { OAuthAuthCodeFlowProvider } from './oauth-authcode-flow-provider';
