@@ -56,6 +56,16 @@ const sidebars = {
         'working-with-calm/voice-mode'
       ],
     },
+    {
+      type: 'category',
+      label: 'How-To Guides',
+      link: {type: 'doc', id: 'how-to/how-to-index'},
+      items: [
+        'how-to/cli-authentication',
+        'how-to/vscode-authentication',
+        'how-to/custom-auth-plugin',
+      ],
+    },
   ],
 
   // Learning sidebar - tutorials
