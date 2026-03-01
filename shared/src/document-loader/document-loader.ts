@@ -1,5 +1,6 @@
 import { CALM_META_SCHEMA_DIRECTORY } from '../consts';
 import { SchemaDirectory } from '../schema-directory';
+import { type AuthProvider } from '../auth/auth-provider';
 import { CalmHubDocumentLoader } from './calmhub-document-loader';
 import { FileSystemDocumentLoader } from './file-system-document-loader';
 import { DirectUrlDocumentLoader } from './direct-url-document-loader';
@@ -26,6 +27,7 @@ export type DocumentLoaderOptions = {
     urlToLocalMap?: Map<string, string>;
     basePath?: string;
     debug?: boolean;
+    authProvider?: AuthProvider;
 };
 
 export function buildDocumentLoader(docLoaderOpts: DocumentLoaderOptions): DocumentLoader {
@@ -44,7 +46,12 @@ export function buildDocumentLoader(docLoaderOpts: DocumentLoaderOptions): Docum
     }
 
     if (docLoaderOpts.calmHubUrl) {
-        loaders.push(new CalmHubDocumentLoader(docLoaderOpts.calmHubUrl, debug));
+        loaders.push(new CalmHubDocumentLoader(
+            docLoaderOpts.calmHubUrl,
+            debug,
+            undefined,
+            docLoaderOpts.authProvider
+        ));
     }
 
     // Always configure FileSystemDocumentLoader with CALM_META_SCHEMA_DIRECTORY
@@ -58,7 +65,7 @@ export function buildDocumentLoader(docLoaderOpts: DocumentLoaderOptions): Docum
         docLoaderOpts.basePath ?? process.cwd()
     ));
 
-    loaders.push(new DirectUrlDocumentLoader(debug));
+    loaders.push(new DirectUrlDocumentLoader(debug, undefined, docLoaderOpts.authProvider));
 
     return new MultiStrategyDocumentLoader(loaders, debug);
 }

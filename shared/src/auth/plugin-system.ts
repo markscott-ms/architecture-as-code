@@ -24,6 +24,9 @@ import { authProviderRegistry } from './auth-provider-registry';
 import { credentialProviderRegistry } from './credential-provider-registry';
 
 import { NoAuthProvider } from './providers/no-auth-provider';
+import { BearerTokenProvider } from './providers/bearer-token-provider';
+import { OAuthDeviceFlowProvider } from './providers/oauth-device-flow-provider';
+import { OAuthAuthCodeFlowProvider } from './providers/oauth-authcode-flow-provider';
 import { FileCredentialProvider } from './credentials/file-credential-provider';
 import { MemoryCredentialProvider } from './credentials/memory-credential-provider';
 
@@ -98,10 +101,17 @@ function registerBuiltInProviders(): void {
         return new NoAuthProvider(config, credentialProvider);
     });
 
-    // Bearer token provider will be registered when implemented in Step 2
-    // authProviderRegistry.register('bearer-token', ...);
-    // authProviderRegistry.register('oauth-device-flow', ...);
-    // authProviderRegistry.register('oauth-authcode-flow', ...);
+    authProviderRegistry.register('bearer-token', (config, credentialProvider) => {
+        return new BearerTokenProvider(config, credentialProvider);
+    });
+
+    authProviderRegistry.register('oauth-device-flow', (config, credentialProvider) => {
+        return new OAuthDeviceFlowProvider(config, credentialProvider);
+    });
+
+    authProviderRegistry.register('oauth-authcode-flow', (config, credentialProvider) => {
+        return new OAuthAuthCodeFlowProvider(config, credentialProvider);
+    });
 
     // Register built-in credential providers
     credentialProviderRegistry.register('file', () => {
@@ -332,3 +342,6 @@ export function initializeAuthSystemSync(): void {
 // Re-export registries for convenient importing
 export { authProviderRegistry, credentialProviderRegistry };
 export { FileCredentialProvider, MemoryCredentialProvider, NoAuthProvider };
+export { BearerTokenProvider, RetrievableBearerTokenProvider } from './providers/bearer-token-provider';
+export { OAuthDeviceFlowProvider } from './providers/oauth-device-flow-provider';
+export { OAuthAuthCodeFlowProvider } from './providers/oauth-authcode-flow-provider';

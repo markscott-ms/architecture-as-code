@@ -42,6 +42,8 @@ export {
 export { FileCredentialProvider } from './credentials/file-credential-provider';
 export { MemoryCredentialProvider } from './credentials/memory-credential-provider';
 
-// Auth providers (imported from providers index)
-// Import as needed in application code:
-// import { OAuthDeviceFlowProvider } from '@finos/calm-shared/auth/providers'
+// Auth providers
+export { NoAuthProvider } from './providers/no-auth-provider';
+export { BearerTokenProvider, RetrievableBearerTokenProvider } from './providers/bearer-token-provider';
+export { OAuthDeviceFlowProvider } from './providers/oauth-device-flow-provider';
+export { OAuthAuthCodeFlowProvider } from './providers/oauth-authcode-flow-provider';

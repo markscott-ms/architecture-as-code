@@ -62,7 +62,7 @@ describe('DocumentLoader', () => {
 
         buildDocumentLoader(docLoaderOpts);
 
-        expect(mocks.calmHubDocLoader).toHaveBeenCalledWith('https://example.com', false);
+        expect(mocks.calmHubDocLoader).toHaveBeenCalledWith('https://example.com', false, undefined, undefined);
     });
 
     it('should create a MappedDocumentLoader when urlToLocalMap is provided', () => {
