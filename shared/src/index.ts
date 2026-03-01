@@ -50,3 +50,20 @@ export {
     type ParsedDocumentContext,
     __test__ as validationEnrichmentTest
 } from './commands/validate/validation-enrichment.js';
+export {
+    AuthConfig,
+    AuthProvider,
+    AuthProviderRegistry,
+    CredentialProvider,
+    CredentialProviderRegistry,
+    TokenResponse,
+    authProviderRegistry,
+    credentialProviderRegistry,
+    FileCredentialProvider,
+    MemoryCredentialProvider,
+    createAuthProvider,
+    createCredentialProvider,
+    initializeAuthSystem,
+    initializeAuthSystemSync,
+    type PluginsConfig,
+} from './auth/index.js';
