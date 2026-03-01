@@ -1,13 +1,23 @@
 import * as vscode from 'vscode'
-import { createAuthProvider, createCredentialProvider } from '@finos/calm-shared'
+import { createAuthProvider, type CredentialProvider } from '@finos/calm-shared'
 import type { Config } from '../core/ports/config'
 import type { Logger } from '../core/ports/logger'
+
+/**
+ * Factory function for creating credential providers
+ * Allows injecting VSCode-specific credential providers
+ */
+export type CredentialProviderFactory = () => CredentialProvider
 
 /**
  * Handles 'calm.auth.login' command
  * Initiates authentication with the configured provider
  */
-export async function authLoginCommand(config: Config, logger: Logger): Promise<void> {
+export async function authLoginCommand(
+    config: Config,
+    logger: Logger,
+    credentialProviderFactory: CredentialProviderFactory
+): Promise<void> {
     const authProviderName = config.authProvider()
 
     if (!authProviderName) {
@@ -21,9 +31,7 @@ export async function authLoginCommand(config: Config, logger: Logger): Promise<
         logger.info?.(`[auth] Initiating authentication with provider: ${authProviderName}`)
 
         const authOptions = config.authOptions() || {}
-        const credentialStorageName = config.authCredentialStorage() || 'file'
-
-        const credentialProvider = createCredentialProvider(credentialStorageName)
+        const credentialProvider = credentialProviderFactory()
         const authProvider = createAuthProvider(
             {
                 provider: authProviderName,
@@ -54,7 +62,11 @@ export async function authLoginCommand(config: Config, logger: Logger): Promise<
  * Handles 'calm.auth.logout' command
  * Clears stored credentials
  */
-export async function authLogoutCommand(config: Config, logger: Logger): Promise<void> {
+export async function authLogoutCommand(
+    config: Config,
+    logger: Logger,
+    credentialProviderFactory: CredentialProviderFactory
+): Promise<void> {
     const authProviderName = config.authProvider()
 
     if (!authProviderName) {
@@ -66,9 +78,7 @@ export async function authLogoutCommand(config: Config, logger: Logger): Promise
         logger.info?.(`[auth] Clearing credentials for provider: ${authProviderName}`)
 
         const authOptions = config.authOptions() || {}
-        const credentialStorageName = config.authCredentialStorage() || 'file'
-
-        const credentialProvider = createCredentialProvider(credentialStorageName)
+        const credentialProvider = credentialProviderFactory()
         const authProvider = createAuthProvider(
             {
                 provider: authProviderName,
@@ -92,7 +102,11 @@ export async function authLogoutCommand(config: Config, logger: Logger): Promise
  * Handles 'calm.auth.status' command
  * Shows authentication status
  */
-export async function authStatusCommand(config: Config, logger: Logger): Promise<void> {
+export async function authStatusCommand(
+    config: Config,
+    logger: Logger,
+    credentialProviderFactory: CredentialProviderFactory
+): Promise<void> {
     const authProviderName = config.authProvider()
 
     if (!authProviderName) {
@@ -104,9 +118,7 @@ export async function authStatusCommand(config: Config, logger: Logger): Promise
         logger.info?.(`[auth] Checking status for provider: ${authProviderName}`)
 
         const authOptions = config.authOptions() || {}
-        const credentialStorageName = config.authCredentialStorage() || 'file'
-
-        const credentialProvider = createCredentialProvider(credentialStorageName)
+        const credentialProvider = credentialProviderFactory()
         const authProvider = createAuthProvider(
             {
                 provider: authProviderName,
@@ -160,7 +172,11 @@ export async function authStatusCommand(config: Config, logger: Logger): Promise
  * Handles 'calm.auth.refresh' command
  * Manually refresh authentication token
  */
-export async function authRefreshCommand(config: Config, logger: Logger): Promise<void> {
+export async function authRefreshCommand(
+    config: Config,
+    logger: Logger,
+    credentialProviderFactory: CredentialProviderFactory
+): Promise<void> {
     const authProviderName = config.authProvider()
 
     if (!authProviderName) {
@@ -172,9 +188,7 @@ export async function authRefreshCommand(config: Config, logger: Logger): Promis
         logger.info?.(`[auth] Refreshing token for provider: ${authProviderName}`)
 
         const authOptions = config.authOptions() || {}
-        const credentialStorageName = config.authCredentialStorage() || 'file'
-
-        const credentialProvider = createCredentialProvider(credentialStorageName)
+        const credentialProvider = credentialProviderFactory()
         const authProvider = createAuthProvider(
             {
                 provider: authProviderName,

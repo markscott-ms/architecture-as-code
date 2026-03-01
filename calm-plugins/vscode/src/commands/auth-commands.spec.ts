@@ -17,17 +17,17 @@ vi.mock('vscode', () => ({
 
 // Mock @finos/calm-shared
 vi.mock('@finos/calm-shared', () => ({
-    createAuthProvider: vi.fn(),
-    createCredentialProvider: vi.fn()
+    createAuthProvider: vi.fn()
 }))
 
 import * as vscode from 'vscode'
-import { createAuthProvider, createCredentialProvider } from '@finos/calm-shared'
+import { createAuthProvider } from '@finos/calm-shared'
 import { authLoginCommand, authLogoutCommand, authStatusCommand, authRefreshCommand } from './auth-commands'
 
 describe('Auth Commands', () => {
     let mockConfig: Config
     let mockLogger: Logger
+    let mockCredentialProvider: any
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -42,7 +42,7 @@ describe('Auth Commands', () => {
             schemaAdditionalFolders: vi.fn(() => []),
             authProvider: vi.fn(() => 'oauth-device-flow'),
             authOptions: vi.fn(() => ({ clientId: 'test-client' })),
-            authCredentialStorage: vi.fn(() => 'file'),
+            authCredentialStorage: vi.fn(() => 'vscode-secrets'),
             calmHubUrl: vi.fn(() => 'https://calm-hub.example.com')
         }
 
@@ -52,13 +52,21 @@ describe('Auth Commands', () => {
             error: vi.fn(),
             debug: vi.fn()
         }
+
+        // Mock credential provider
+        mockCredentialProvider = {
+            store: vi.fn(),
+            retrieve: vi.fn(),
+            delete: vi.fn(),
+            clear: vi.fn()
+        }
     })
 
     describe('authLoginCommand', () => {
         it('should show error when no auth provider configured', async () => {
             mockConfig.authProvider = vi.fn(() => undefined)
 
-            await authLoginCommand(mockConfig, mockLogger)
+            await authLoginCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
                 expect.stringContaining('No authentication configured')
@@ -70,17 +78,16 @@ describe('Auth Commands', () => {
                 authenticate: vi.fn().mockResolvedValue(undefined)
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authLoginCommand(mockConfig, mockLogger)
+            await authLoginCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(createAuthProvider).toHaveBeenCalledWith(
                 {
                     provider: 'oauth-device-flow',
                     options: { clientId: 'test-client' }
                 },
-                expect.anything()
+                mockCredentialProvider
             )
             expect(mockAuthProvider.authenticate).toHaveBeenCalled()
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
@@ -93,10 +100,9 @@ describe('Auth Commands', () => {
                 authenticate: vi.fn().mockRejectedValue(new Error('Auth failed'))
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authLoginCommand(mockConfig, mockLogger)
+            await authLoginCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
                 expect.stringContaining('Auth failed')
@@ -108,7 +114,7 @@ describe('Auth Commands', () => {
         it('should show message when no auth provider configured', async () => {
             mockConfig.authProvider = vi.fn(() => undefined)
 
-            await authLogoutCommand(mockConfig, mockLogger)
+            await authLogoutCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 expect.stringContaining('No authentication configured')
@@ -120,10 +126,9 @@ describe('Auth Commands', () => {
                 logout: vi.fn().mockResolvedValue(undefined)
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authLogoutCommand(mockConfig, mockLogger)
+            await authLogoutCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(mockAuthProvider.logout).toHaveBeenCalled()
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
@@ -136,7 +141,7 @@ describe('Auth Commands', () => {
         it('should show message when no auth provider configured', async () => {
             mockConfig.authProvider = vi.fn(() => undefined)
 
-            await authStatusCommand(mockConfig, mockLogger)
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 expect.stringContaining('No authentication configured')
@@ -148,10 +153,9 @@ describe('Auth Commands', () => {
                 getStoredToken: vi.fn().mockResolvedValue('test-token')
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authStatusCommand(mockConfig, mockLogger)
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 expect.stringContaining('Authenticated')
@@ -163,10 +167,9 @@ describe('Auth Commands', () => {
                 getStoredToken: vi.fn().mockResolvedValue(null)
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authStatusCommand(mockConfig, mockLogger)
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
                 expect.stringContaining('Not authenticated')
@@ -182,10 +185,9 @@ describe('Auth Commands', () => {
                 getStoredToken: vi.fn().mockResolvedValue(jwtToken)
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authStatusCommand(mockConfig, mockLogger)
+            await authStatusCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 expect.stringMatching(/expires in \d+ hours/)
@@ -197,7 +199,7 @@ describe('Auth Commands', () => {
         it('should show error when no auth provider configured', async () => {
             mockConfig.authProvider = vi.fn(() => undefined)
 
-            await authRefreshCommand(mockConfig, mockLogger)
+            await authRefreshCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
                 expect.stringContaining('No authentication configured')
@@ -209,10 +211,9 @@ describe('Auth Commands', () => {
                 refresh: vi.fn().mockResolvedValue(true)
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authRefreshCommand(mockConfig, mockLogger)
+            await authRefreshCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(mockAuthProvider.refresh).toHaveBeenCalled()
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
@@ -225,10 +226,9 @@ describe('Auth Commands', () => {
                 refresh: vi.fn().mockResolvedValue(false)
             }
 
-            vi.mocked(createCredentialProvider).mockReturnValue({} as any)
             vi.mocked(createAuthProvider).mockReturnValue(mockAuthProvider as any)
 
-            await authRefreshCommand(mockConfig, mockLogger)
+            await authRefreshCommand(mockConfig, mockLogger, () => mockCredentialProvider)
 
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 expect.stringContaining('still valid')

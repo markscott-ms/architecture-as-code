@@ -61,8 +61,8 @@ Add to your `settings.json`:
     "redirectUri": "http://localhost:7622",
     "scope": "openid profile email offline_access",
     "openBrowser": true
-  },
-  "calm.auth.credentialStorage": "file"
+  }
+  // credentialStorage defaults to "vscode-secrets" (OS keychain)
 }
 ```
 
@@ -162,6 +162,16 @@ This displays a device code in VSCode that you manually enter at the authenticat
 }
 ```
 
+**Using file storage instead of OS keychain:**
+
+```json
+{
+  "calm.auth.credentialStorage": "file"
+}
+```
+
+This stores credentials in `~/.calm/credentials/` instead of the OS keychain. Less secure than `vscode-secrets` but may be needed in some automation scenarios.
+
 Or use environment variables:
 
 ```json
@@ -179,12 +189,20 @@ Control how credentials are stored:
 
 ```json
 {
-  "calm.auth.credentialStorage": "file"  // or "memory"
+  "calm.auth.credentialStorage": "vscode-secrets"  // or "file" or "memory"
 }
 ```
 
-- **`file`** (default) - Stores credentials in `~/.calm/credentials/` with 0600 permissions
+- **`vscode-secrets`** (default, recommended) - Stores credentials securely in OS keychain
+  - macOS: Keychain
+  - Windows: Credential Manager
+  - Linux: Secret Service API (e.g., gnome-keychain)
+- **`file`** - Stores credentials in `~/.calm/credentials/` with 0600 permissions
 - **`memory`** - In-memory only, lost when VSCode closes
+
+:::tip
+The `vscode-secrets` option provides the best security by leveraging the operating system's native credential storage. Credentials are encrypted and managed by the OS, providing better protection than file-based storage.
+:::
 
 ## Provider-Specific Examples
 
@@ -389,7 +407,7 @@ Authentication is shared across workspaces (stored in `~/.calm/credentials/`), b
    ```gitignore
    .vscode/settings.json  # If it contains auth options
    ```
-3. **Use file storage** for persistent authentication across sessions
+3. **Use vscode-secrets storage** (default) for secure, persistent authentication across sessions
 4. **Rotate tokens** according to your organization's security policy
 5. **Logout when done** in shared environments
 
@@ -410,8 +428,8 @@ Here's a complete example for enterprise Okta authentication:
     "redirectUri": "http://localhost:7622",
     "scope": "openid profile email offline_access",
     "openBrowser": true
-  },
-  "calm.auth.credentialStorage": "file"
+  }
+  // credentialStorage defaults to "vscode-secrets" for secure OS keychain storage
 }
 ```
 

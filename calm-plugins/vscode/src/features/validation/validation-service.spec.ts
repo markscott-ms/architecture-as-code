@@ -134,7 +134,7 @@ describe('ValidationService', () => {
             calmHubUrl: vi.fn(() => undefined)
         }
 
-        service = new ValidationService(mockLogger, mockConfig)
+        service = new ValidationService(mockLogger, mockConfig, undefined)
     })
 
     describe('constructor', () => {

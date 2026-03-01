@@ -16,6 +16,7 @@ import { DiagnosticsService } from './core/services/diagnostics-service'
 import { createApplicationStore, type ApplicationStoreApi } from './application-store'
 import { setWidgetLogger } from '@finos/calm-shared'
 import { ValidationService } from './features/validation/validation-service'
+import { VscodeSecretCredentialProvider } from './auth/vscode-secret-credential-provider'
 
 /**
  * Main extension controller that orchestrates all VS Code extension functionality
@@ -85,8 +86,11 @@ export class CalmExtensionController {
 
     new CommandRegistrar(context, store, navigationService, configService, log).registerAll()
 
+    // Create VSCode SecretStorage credential provider for authentication
+    const credentialProvider = new VscodeSecretCredentialProvider(context.secrets)
+
     // Initialize validation service (await to ensure schemas are loaded before validating documents)
-    const validationService = new ValidationService(log, configService)
+    const validationService = new ValidationService(log, configService, credentialProvider)
     await validationService.register(context)
 
     const storeReactionMediator = new StoreReactionMediator(

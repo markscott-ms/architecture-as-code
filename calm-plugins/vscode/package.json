@@ -173,11 +173,12 @@
                 "calm.auth.credentialStorage": {
                     "type": "string",
                     "enum": [
+                        "vscode-secrets",
                         "file",
                         "memory"
                     ],
-                    "default": "file",
-                    "description": "Storage mechanism for authentication credentials."
+                    "default": "vscode-secrets",
+                    "markdownDescription": "Storage mechanism for authentication credentials. **vscode-secrets** (recommended) uses VS Code's secure storage (OS keychain), **file** stores in ~/.calm-credentials.json, **memory** is for testing only."
                 }
             }
         },

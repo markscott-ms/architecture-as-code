@@ -8,6 +8,7 @@ import { createClearTreeViewSearchCommand } from './clear-tree-view-search-comma
 import { createCreateWebsiteCommand } from './create-website/create-website-command'
 import { createNavigateToArchitectureCommand } from './navigate-to-architecture-command'
 import { authLoginCommand, authLogoutCommand, authStatusCommand, authRefreshCommand } from './auth-commands'
+import { VscodeSecretCredentialProvider } from '../auth/vscode-secret-credential-provider'
 import * as vscode from 'vscode'
 
 export class CommandRegistrar {
@@ -32,18 +33,29 @@ export class CommandRegistrar {
             this.context.subscriptions.push(disposable)
         })
 
-        // Register authentication commands
+        // Create credential provider factory that uses VSCode SecretStorage
+        const credentialProviderFactory = () => new VscodeSecretCredentialProvider(this.context.secrets)
+
+        // Register authentication commands with VSCode credential provider
         this.context.subscriptions.push(
-            vscode.commands.registerCommand('calm.auth.login', () => authLoginCommand(this.config, this.logger))
+            vscode.commands.registerCommand('calm.auth.login', () =>
+                authLoginCommand(this.config, this.logger, credentialProviderFactory)
+            )
         )
         this.context.subscriptions.push(
-            vscode.commands.registerCommand('calm.auth.logout', () => authLogoutCommand(this.config, this.logger))
+            vscode.commands.registerCommand('calm.auth.logout', () =>
+                authLogoutCommand(this.config, this.logger, credentialProviderFactory)
+            )
         )
         this.context.subscriptions.push(
-            vscode.commands.registerCommand('calm.auth.status', () => authStatusCommand(this.config, this.logger))
+            vscode.commands.registerCommand('calm.auth.status', () =>
+                authStatusCommand(this.config, this.logger, credentialProviderFactory)
+            )
         )
         this.context.subscriptions.push(
-            vscode.commands.registerCommand('calm.auth.refresh', () => authRefreshCommand(this.config, this.logger))
+            vscode.commands.registerCommand('calm.auth.refresh', () =>
+                authRefreshCommand(this.config, this.logger, credentialProviderFactory)
+            )
         )
     }
 }

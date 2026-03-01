@@ -11,7 +11,7 @@ import {
     buildDocumentLoader,
     DocumentLoader,
     createAuthProvider,
-    createCredentialProvider
+    type CredentialProvider
 } from '@finos/calm-shared'
 import type { Logger } from '../../core/ports/logger'
 import type { Config } from '../../core/ports/config'
@@ -30,6 +30,7 @@ export class ValidationService implements vscode.Disposable {
     private readonly diagnosticCollection: vscode.DiagnosticCollection
     private readonly disposables: vscode.Disposable[] = []
     private schemaRegistry: CalmSchemaRegistry | undefined
+    private credentialProvider: CredentialProvider | undefined
 
     // Debouncing: track pending validations and last validated document versions
     private readonly pendingValidations = new Map<string, ReturnType<typeof setTimeout>>()
@@ -38,10 +39,12 @@ export class ValidationService implements vscode.Disposable {
 
     constructor(
         private readonly logger: Logger,
-        private readonly config: Config
+        private readonly config: Config,
+        credentialProvider?: CredentialProvider
     ) {
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('calm')
         this.disposables.push(this.diagnosticCollection)
+        this.credentialProvider = credentialProvider
     }
 
     /**
@@ -299,18 +302,16 @@ export class ValidationService implements vscode.Disposable {
         // Load authentication provider if configured
         let authProvider
         const authProviderName = this.config.authProvider()
-        if (authProviderName) {
+        if (authProviderName && this.credentialProvider) {
             try {
                 const authOptions = this.config.authOptions() || {}
-                const credentialStorageName = this.config.authCredentialStorage() || 'file'
 
-                const credentialProvider = createCredentialProvider(credentialStorageName)
                 authProvider = createAuthProvider(
                     {
                         provider: authProviderName,
                         options: authOptions
                     },
-                    credentialProvider
+                    this.credentialProvider
                 )
 
                 this.logger.info?.(`Authentication provider loaded: ${authProviderName}`)
